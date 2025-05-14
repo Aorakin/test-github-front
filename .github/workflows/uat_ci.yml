@@ -38,9 +38,8 @@ jobs:
       
       - name: Pull Docker image
         run: |
-          sha_commitID=$(git rev-parse uat~1)
-          echo "Commit SHA: $sha_commitID"
-          docker pull aorakin/test-node-js:"$sha_commitID"
+          echo "Commit SHA: git rev-list uat -2 | tail -1"
+          docker pull aorakin/test-node-js:$(git rev-list uat -2 | tail -1)
   
       - name: Build and push Docker image
         id: push
