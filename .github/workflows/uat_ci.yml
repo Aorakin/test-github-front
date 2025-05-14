@@ -24,6 +24,24 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
         
-      - name: Pull Docker image
-        run: |
-          docker pull aorakin/test-node-js:$(git rev-parse uat~1)
+      - name: Extract Git commit SHA
+        id: vars
+        run: echo "sha_commitID=$(git rev-parse uat~1)" >> "$GITHUB_OUTPUT"
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: aorakin/test-node-js
+          tags: |
+            ${{ steps.vars.outputs.sha_commitID }}
+            
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
