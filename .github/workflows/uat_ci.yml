@@ -38,9 +38,9 @@ jobs:
       
       - name: Pull Docker image
         run: |
-          echo "Commit SHA: git rev-list uat -2 | tail -1"
-          docker pull aorakin/test-node-js:"$(git rev-parse uat~1)"
-          
+          export COMMITID=$(git rev-parse uat~1)
+          docker pull aorakin/test-node-js:$COMMITID
+
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
