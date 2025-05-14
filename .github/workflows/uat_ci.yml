@@ -38,7 +38,14 @@ jobs:
       
       - name: Pull Docker image
         run: |
+          echo "Checking out the uat branch..."
+          git checkout uat
+
+          echo "Extracting the commit ID..."
           export COMMITID=$(git rev-parse uat~1)
+          echo "Commit ID to use: $COMMITID"
+
+          echo "Pulling the Docker image..."
           docker pull aorakin/test-node-js:$COMMITID
 
       - name: Build and push Docker image
