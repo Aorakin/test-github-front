@@ -36,6 +36,11 @@ jobs:
           tags: |
             ${{ steps.vars.outputs.sha_commitID }}
       
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Pull Docker image
         run: |
           git log -2 --format=%H
