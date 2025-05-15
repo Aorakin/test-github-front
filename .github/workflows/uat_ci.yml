@@ -45,6 +45,11 @@ jobs:
         run: |
           git log -2 --format=%H
           docker pull aorakin/test-node-js:$(git log -2 --format=%H | tail -1)
+      
+      - name: Retag and push image to uat
+        run: |
+          docker tag aorakin/test-node-js:$(git log -2 --format=%H | tail -1) aorakin/test-node-js:uat-$(date +%Y%m%d-%H%M)
+          docker push aorakin/test-node-js:uat-$(date +%Y%m%d-%H%M)
 
       # - name: Build and push Docker image
       #   id: push
