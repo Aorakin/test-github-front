@@ -38,7 +38,7 @@ jobs:
       
       - name: Pull Docker image
         run: |
-          docker pull aorakin/test-node-js:$(git log -2 --pretty=format:"%H" uat | tail -1)
+          docker pull aorakin/test-node-js:$(git log -2 --format=%H | tail -1)
 
       - name: Build and push Docker image
         id: push
