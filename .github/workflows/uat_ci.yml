@@ -50,7 +50,15 @@ jobs:
         run: |
           docker tag aorakin/test-node-js:$(git log -2 --format=%H | tail -1) aorakin/test-node-js:uat-$(date +%Y%m%d-%H%M)
           docker push aorakin/test-node-js:uat-$(date +%Y%m%d-%H%M)
-
+          
+      - name: Trigger CD workflow
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.CD_TRIGGER_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/Aorakin/test-github-cd/dispatches \
+            -d '{"event_type":"deploy"}'
       # - name: Build and push Docker image
       #   id: push
       #   uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
