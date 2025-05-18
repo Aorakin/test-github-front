@@ -48,7 +48,7 @@ jobs:
       - name: Trigger CD workflow
         if: success()
         run: |
-          echo "hello last time jing jing"
+          echo "hello last time jing jing jing"
           curl -X POST \
             -H "Authorization: token ${{ secrets.CD_TRIGGER_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
