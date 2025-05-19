@@ -44,10 +44,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      # - name: Generate artifact attestation
-      #   uses: actions/attest-build-provenance@v2
-      #   with:
-      #     subject-name: index.docker.io/aorakin/test-node-js
-      #     subject-digest: ${{ steps.push.outputs.digest }}
-      #     push-to-registry: true
+      
+      - name: Trigger CD workflow
+        if: success()
+        run: |
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.CD_TRIGGER_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/Aorakin/test-github-cd/dispatches \
+            -d '{"event_type":"cd-dev", "client_payload": { "image_tag": "${{ steps.vars.outputs.sha_commitID}}" }}'
