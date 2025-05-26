@@ -44,12 +44,37 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+    outputs:
+      image_tag: ${{ steps.vars.outputs.IMAGE_TAG }}
       
-      - name: Trigger CD workflow
-        if: success()
-        run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.CD_TRIGGER_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/Aorakin/test-github-cd/dispatches \
-            -d '{"event_type":"cd-dev", "client_payload": { "image_tag": "${{ steps.vars.outputs.sha_commitID}}" }}'
+  trigger_cd_pipeline:
+    name: Trigger CD Pipeline
+    needs: push_to_registry
+    runs-on: k8s-self-hosted
+    steps:
+        - name: Set up SSH
+          run: |
+            mkdir -p ~/.ssh
+            echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+        - name: Set up Git
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        - name: Clone repository
+          run: |
+            git clone git@github.com:Aorakin/test-github-cd.git
+            cd ./test-github-cd.git/
+
+        - name: Replace .dev.env with new image tag
+          run: |
+            echo "IMAGE=${{ secrets.DOCKER_USERNAME }}/test-node-js:${{ needs.push_to_registry.outputs.image_tag }}" > ./test-github-front/dev/.dev.env
+
+        - name: Commit and Push
+          run: |
+            git add ./test-github-front/dev
+            git commit -m "Trigger CD from Repo CI"
+            git push
