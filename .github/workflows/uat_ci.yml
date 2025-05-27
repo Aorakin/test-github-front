@@ -54,7 +54,7 @@ jobs:
           docker tag ${{ secrets.DOCKER_USERNAME }}/test-node-js:$(git log -2 --format=%H | tail -1) ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
           docker push ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
     outputs:
-      image_tag: ${{ steps.vars.outputs.version }}
+      image_tag: ${{ steps.read_ymal.outputs.version }}
       
 
   trigger_cd_pipeline:
