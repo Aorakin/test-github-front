@@ -59,15 +59,15 @@ jobs:
             chmod 600 ~/.ssh/id_rsa
             ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-        - name: Set up Git
-          run: |
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-
         - name: Clone repository
           run: |
             git clone git@github.com:Aorakin/test-github-cd.git
             cd ./test-github-cd.git/
+
+        - name: Set up Git
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
 
         - name: Replace .dev.env with new image tag
           run: |
