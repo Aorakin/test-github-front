@@ -3,10 +3,10 @@ name: Push Backend Docker image
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+-[0-9]*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-[0-9]*'
 
 jobs:
-  promote-to-prod:
+  promote-to-prod:  
     runs-on: self-hosted
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Extract version from tag
         id: extract_version
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_NAME="${GITHUB_REF_NAME#v}"
           VERSION="${TAG_NAME}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
