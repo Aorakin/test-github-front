@@ -73,7 +73,7 @@ jobs:
       
       - name: Replace .prd.env with new image tag
         run: |
-          echo "IMAGE=${{ secrets.DOCKER_USERNAME }}/test-node-js:${{ needs.push_to_registry.outputs.image_tag }}" > ./test-github-front/prd/.prd.env
+          echo "IMAGE=${{ secrets.DOCKER_USERNAME }}/test-node-js:${{ needs.promote-to-prod.outputs.image_tag }}" > ./test-github-front/prd/.prd.env
 
 
       - name: Commit and Push
