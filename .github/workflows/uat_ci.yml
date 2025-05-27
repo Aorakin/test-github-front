@@ -50,28 +50,36 @@ jobs:
         run: |
           docker tag ${{ secrets.DOCKER_USERNAME }}/test-node-js:$(git log -2 --format=%H | tail -1) ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
           docker push ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
+    outputs:
+      image_tag: ${{ steps.vars.outputs.version }}
+      
 
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
     needs: push_to_registry
     runs-on: self-hosted
     steps:
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
+      # - name: Set up SSH
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_ed25519
+      #     chmod 600 ~/.ssh/id_ed25519
+      #     ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: Check out Repo CD
+        uses: actions/checkout@v4
+        with:
+          repository: Aorakin/test-github-cd
+          ssh-key: ${{ secrets.SSH_SECRET }}
+      
       - name: Set up Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Clone repository
-        run: |
-          git clone git@github.com:Aorakin/test-github-cd.git
-          cd ./test-github-cd.git/
+      
+      # - name: Clone repository
+      #   run: |
+      #     git clone git@github.com:Aorakin/test-github-cd.git
+      #     cd ./test-github-cd.git/
 
       - name: Replace .uat.env with new image tag
         run: |
@@ -79,6 +87,6 @@ jobs:
 
       - name: Commit and Push
         run: |
-          git add ./nathalin.intranet.backend/uat
+          git add ./test-github-front/uat
           git commit -m "Trigger CD from Repo CI"
           git push
