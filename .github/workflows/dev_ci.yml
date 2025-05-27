@@ -50,7 +50,7 @@ jobs:
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
     needs: push_to_registry
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
         - name: Set up SSH
           run: |

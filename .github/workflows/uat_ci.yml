@@ -54,7 +54,7 @@ jobs:
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
     needs: push_to_registry
-    runs-on: k8s-self-hosted
+    runs-on: self-hosted
     steps:
       - name: Set up SSH
         run: |
