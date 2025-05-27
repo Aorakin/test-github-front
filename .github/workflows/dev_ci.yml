@@ -50,13 +50,13 @@ jobs:
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
     needs: push_to_registry
-    runs-on: k8s-self-hosted
+    runs-on: ubuntu-latest
     steps:
         - name: Set up SSH
           run: |
             mkdir -p ~/.ssh
-            echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_ed25519
-            chmod 600 ~/.ssh/id_ed25519
+            echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
             ssh-keyscan github.com >> ~/.ssh/known_hosts
 
         - name: Set up Git
