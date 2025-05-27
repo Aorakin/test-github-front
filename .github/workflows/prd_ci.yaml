@@ -52,7 +52,7 @@ jobs:
 
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
-    needs: pull_and_retag
+    needs: promote-to-prod
     runs-on: self-hosted
     steps:
       - name: Check out Repo CD
