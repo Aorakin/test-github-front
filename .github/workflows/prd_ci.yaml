@@ -1,0 +1,78 @@
+name: Push Backend Docker image
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+-[0-9]*'
+
+jobs:
+  promote-to-prod:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG_NAME}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        
+      - name: Check if Docker Hub image:tag exists
+        id: fetch_tag
+        run: |
+          VERSION="${{ steps.extract_version.outputs.version }}"
+          IMAGE_NAME="aorakin/test-node-js"
+          echo "Checking if tag '$VERSION' exists for image '$IMAGE_NAME'..."
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://hub.docker.com/v2/repositories/${IMAGE_NAME}/tags/${VERSION}/)
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "No matching tag '$VERSION' found in Docker Hub for image '$IMAGE_NAME'"
+            exit 1
+          fi
+
+          echo "Found image tag: $VERSION"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+                
+    outputs:
+      image_tag: ${{ steps.extract_version.outputs.version  }}
+
+
+  trigger_cd_pipeline:
+    name: Trigger CD Pipeline
+    needs: pull_and_retag
+    runs-on: self-hosted
+    steps:
+      - name: Check out Repo CD
+        uses: actions/checkout@v4
+        with:
+          repository: Aorakin/test-github-cd
+          ssh-key: ${{ secrets.SSH_SECRET }}
+      
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Replace .prd.env with new image tag
+        run: |
+          echo "IMAGE=${{ secrets.DOCKER_USERNAME }}/test-node-js:${{ needs.push_to_registry.outputs.image_tag }}" > ./test-github-front/prd/.prd.env
+
+
+      - name: Commit and Push
+        run: |
+          git add ./test-github-front/prd
+          git commit -m "Trigger CD from Repo CI"
+          git push
