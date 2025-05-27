@@ -45,7 +45,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
     outputs:
-      image_tag: ${{ steps.vars.outputs.IMAGE_TAG }}
+      image_tag: ${{ steps.vars.outputs.sha_commitID }}
       
   trigger_cd_pipeline:
     name: Trigger CD Pipeline
