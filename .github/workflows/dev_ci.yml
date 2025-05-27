@@ -58,7 +58,7 @@ jobs:
         #     echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_rsa
         #     chmod 600 ~/.ssh/id_rsa
         #     ssh-keyscan github.com >> ~/.ssh/known_hosts
-
+        #
         # - name: Clone repository
         #   run: |
         #     git clone git@github.com:Aorakin/test-github-cd.git
