@@ -15,31 +15,31 @@ jobs:
       attestations: write
       id-token: write
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-
+   
       - name: Log in to Docker Hub
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
         
-      - name: Extract Git commit SHA
-        id: vars
-        run: echo "UAT_TAG=uat-$(date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
+      - name: Read Version from YAML file
+        id: read_ymal
+        run: |
+            VERSION=$(yq '.version' version.yaml)
+            DATETIME=$(date +'%Y%m%d%H%M%S')
+            FULL_VERSION="${VERSION}-${DATETIME}"
+            echo "version=$FULL_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
-        with:
-          images: ${{ secrets.DOCKER_USERNAME }}/test-node-js
-          tags: |
-            ${{ steps.vars.outputs.sha_commitID }}
-      
-      - name: Checkout the repo
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      # - name: Extract metadata (tags, labels) for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      #   with:
+      #     images: ${{ secrets.DOCKER_USERNAME }}/test-node-js
+      #     tags: |
+      #       ${{ steps.vars.outputs.sha_commitID }}
 
       - name: Pull Docker image
         run: |
@@ -48,23 +48,45 @@ jobs:
       
       - name: Retag and push image to uat
         run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/test-node-js:$(git log -2 --format=%H | tail -1) ${{ secrets.DOCKER_USERNAME }}/test-node-js:uat-$(date +%Y%m%d-%H%M)
-          docker push ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.vars.outputs.UAT_TAG}}
+          docker tag ${{ secrets.DOCKER_USERNAME }}/test-node-js:$(git log -2 --format=%H | tail -1) ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
+          docker push ${{ secrets.DOCKER_USERNAME }}/test-node-js:${{steps.read_ymal.outputs.version}}
+    outputs:
+      image_tag: ${{ steps.vars.outputs.version }}
+      
 
-      - name: Trigger CD workflow
-        if: success()
+  trigger_cd_pipeline:
+    name: Trigger CD Pipeline
+    needs: push_to_registry
+    runs-on: self-hosted
+    steps:
+      # - name: Set up SSH
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.SSH_SECRET }}" > ~/.ssh/id_ed25519
+      #     chmod 600 ~/.ssh/id_ed25519
+      #     ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: Check out Repo CD
+        uses: actions/checkout@v4
+        with:
+          repository: Aorakin/test-github-cd
+          ssh-key: ${{ secrets.SSH_SECRET }}
+      
+      - name: Set up Git
         run: |
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.CD_TRIGGER_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/Aorakin/test-github-cd/dispatches \
-            -d '{"event_type":"cd-uat", "client_payload": { "image_tag": "${{ steps.vars.outputs.UAT_TAG}}" }}'
-      # - name: Build and push Docker image
-      #   id: push
-      #   uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-      #   with:
-      #     context: .
-      #     file: Dockerfile
-      #     push: true
-      #     tags: ${{ steps.meta.outputs.tags }}
-      #     labels: ${{ steps.meta.outputs.labels }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      # - name: Clone repository
+      #   run: |
+      #     git clone git@github.com:Aorakin/test-github-cd.git
+      #     cd ./test-github-cd.git/
+
+      - name: Replace .uat.env with new image tag
+        run: |
+          echo "IMAGE=${{ secrets.DOCKER_USERNAME }}/test-node-js:${{ needs.push_to_registry.outputs.image_tag }}" > ./test-github-front/uat/.uat.env
+
+      - name: Commit and Push
+        run: |
+          git add ./test-github-front/uat
+          git commit -m "Trigger CD from Repo CI"
+          git push

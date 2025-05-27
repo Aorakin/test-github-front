@@ -7,7 +7,7 @@ RUN npm install --production
 
 COPY . .
 
-FROM node:20-slim
+FROM node:20-alpine
 WORKDIR /app
 
 COPY --from=build /app .
