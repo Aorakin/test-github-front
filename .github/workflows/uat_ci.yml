@@ -25,7 +25,7 @@ jobs:
       - name: Read Version from YAML file
         id: read_ymal
         run: |
-            VERSION=$(yq '.version' ./test-github-front/version.yaml)
+            VERSION=$(yq '.version' version.yaml)
             DATETIME=$(date +'%Y%m%d%H%M%S')
             FULL_VERSION="${VERSION}-${DATETIME}"
             echo "version=$FULL_VERSION" >> $GITHUB_OUTPUT
